@@ -1,0 +1,14 @@
+version: '1.0'
+# containers para a blockchain QoS
+
+services:  
+  #container for the transaction processor
+  processor:
+    container_name: processor
+    build:
+      context: .
+      dockerfile: DockerFile
+    depends_on:
+        - validator
+    volumes:
+        - './processor:/processor'
