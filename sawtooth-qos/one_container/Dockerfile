@@ -30,14 +30,15 @@
     RUN echo "deb [arch=amd64] http://repo.sawtooth.me/ubuntu/chime/stable bionic universe" >> /etc/apt/sources.list  && (apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 8AA7AF1F1091A5FD  || apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 8AA7AF1F1091A5FD)  && apt-get update
     
     # instalar os pacotes importantes
-    RUN apt-get install -y -q python3-sawtooth-rest-api python3-sawtooth-validator sawtooth-settings-tp sawtooth-pbft-engine && apt-get clean  && rm -rf /var/lib/apt/lists/*
+    RUN apt-get install -y -q sawtooth python3-sawtooth-rest-api python3-sawtooth-validator sawtooth-settings-tp sawtooth-pbft-engine sawtooth-devmode-engine-rust && apt-get clean  && rm -rf /var/lib/apt/lists/*
 
     EXPOSE 4004/tcp
     EXPOSE 8008
 
     # CMD ["sawtooth-rest-api"]
 
-    # CMD ["sawtooth-validator" "-vv"] # para rodar o validador
+    # para rodar o validador
+    # CMD ["sawtooth-validator" "-vv"]
 
     # CMD ["settings-tp" "-vv"] # para rodar o settings
 

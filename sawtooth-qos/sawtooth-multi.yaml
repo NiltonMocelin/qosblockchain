@@ -1,0 +1,181 @@
+# Copyright 2017 Intel Corporation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ------------------------------------------------------------------------------
+
+version: "2.1"
+
+services:
+
+  settings-tp-0:
+    image: hyperledger/sawtooth-settings-tp:1.0
+    container_name: sawtooth-settings-tp-default-0
+    depends_on:
+      - validator-0
+    entrypoint: settings-tp -vv -C tcp://validator-0:4004
+
+  settings-tp-1:
+    image: hyperledger/sawtooth-settings-tp:1.0
+    container_name: sawtooth-settings-tp-default-1
+    depends_on:
+      - validator-1
+    entrypoint: settings-tp -vv -C tcp://validator-1:4005
+
+  settings-tp-2:
+    image: hyperledger/sawtooth-settings-tp:1.0
+    container_name: sawtooth-settings-tp-default-2
+    depends_on:
+      - validator-2
+    entrypoint: settings-tp -vv -C tcp://validator-2:4006
+
+  intkey-tp-python:
+    image: hyperledger/sawtooth-intkey-tp-python:1.0
+    container_name: sawtooth-intkey-tp-python-default
+    depends_on:
+      - validator-0
+    entrypoint: intkey-tp-python -vv -C tcp://validator-0:4004
+
+  xo-tp-python:
+    image: hyperledger/sawtooth-xo-tp-python:1.0
+    container_name: sawtooth-xo-tp-python-default
+    depends_on:
+      - validator-0
+    entrypoint: xo-tp-python -vv -C tcp://validator-0:4004
+
+  validator-0:
+    image: hyperledger/sawtooth-validator:1.0
+    container_name: sawtooth-validator-default-0
+    expose:
+      - 4004
+      - 8800
+    ports:
+      - "4004:4004"
+    volumes:
+      - ${PWD}/artifacts/keys:/root/.sawtooth/keys
+      - ${PWD}/artifacts/genesis:/home/sawtooth/genesis
+    entrypoint: "bash -c \"\
+        sawadm keygen --force && \
+        sawtooth keygen my_key --force && \
+        mkdir -p /home/sawtooth/genesis && \
+        echo 'Hello, world.' >/home/sawtooth/genesis/foo.txt && \
+        sawset genesis -o /home/sawtooth/genesis/config-genesis.batch -k /root/.sawtooth/keys/my_key.priv && \
+        sawadm genesis /home/sawtooth/genesis/config-genesis.batch && \
+        sawtooth-validator -vv \
+          --minimum-peer-connectivity 1 \
+          --endpoint tcp://validator-0:8800 \
+          --bind component:tcp://eth0:4004 \
+          --bind network:tcp://eth0:8800 \
+          --scheduler parallel \
+          --network-auth trust \
+          --peering dynamic \
+        \""
+
+  validator-1:
+    image: hyperledger/sawtooth-validator:1.0
+    container_name: sawtooth-validator-default-1
+    expose:
+      - 4005
+      - 8801
+    ports:
+      - "4005:4005"
+    depends_on:
+      - validator-0
+    command: |
+      bash -c "
+        sawadm keygen --force && \
+        sawtooth-validator -vv \
+            --minimum-peer-connectivity 1 \
+            --bind network:tcp://eth0:8801 \
+            --bind component:tcp://eth0:4005 \
+            --peering dynamic \
+            --endpoint tcp://validator-1:8801 \
+            --seeds tcp://validator-0:8800 \
+            --scheduler parallel \
+            --network-auth trust
+      "
+    environment:
+      PYTHONPATH: "/project/sawtooth-core/consensus/poet/common:\
+        /project/sawtooth-core/consensus/poet/simulator:\
+        /project/sawtooth-core/consensus/poet/core"
+    stop_signal: SIGKILL
+
+  validator-2:
+    image: hyperledger/sawtooth-validator:1.0
+    container_name: sawtooth-validator-default-2
+    expose:
+      - 4006
+      - 8802
+    ports:
+      - "4006:4006"
+    depends_on:
+      - validator-0
+    command: |
+      bash -c "
+        sawadm keygen --force && \
+        sawtooth-validator -vv \
+            --minimum-peer-connectivity 1 \
+            --bind network:tcp://eth0:8802 \
+            --bind component:tcp://eth0:4006 \
+            --peering dynamic \
+            --endpoint tcp://validator-2:8802 \
+            --seeds tcp://validator-0:8800 \
+            --scheduler parallel \
+            --network-auth trust
+      "
+    environment:
+      PYTHONPATH: "/project/sawtooth-core/consensus/poet/common:\
+        /project/sawtooth-core/consensus/poet/simulator:\
+        /project/sawtooth-core/consensus/poet/core"
+    stop_signal: SIGKILL
+
+  rest-api-0:
+    image: hyperledger/sawtooth-rest-api:1.0
+    container_name: sawtooth-rest-api-default-0
+    ports:
+      - "8008:8008"
+    depends_on:
+      - validator-0
+    entrypoint: sawtooth-rest-api -C tcp://validator-0:4004 --bind rest-api-0:8008
+
+  rest-api-1:
+    image: hyperledger/sawtooth-rest-api:1.0
+    container_name: sawtooth-rest-api-default-1
+    ports:
+      - "8009:8009"
+    depends_on:
+      - validator-1
+    entrypoint: sawtooth-rest-api -C tcp://validator-1:4005 --bind rest-api-1:8009
+
+  rest-api-2:
+    image: hyperledger/sawtooth-rest-api:1.0
+    container_name: sawtooth-rest-api-default-2
+    ports:
+      - "8010:8010"
+    depends_on:
+      - validator-2
+    entrypoint: sawtooth-rest-api -C tcp://validator-2:4006 --bind rest-api-2:8010
+
+  shell:
+    image: hyperledger/sawtooth-all:1.0
+    container_name: sawtooth-shell-default
+    depends_on:
+      - rest-api-0
+      - rest-api-1
+      - rest-api-2
+    entrypoint: "bash -c \"\
+        sawtooth keygen --force && \
+        tail -f /dev/null \
+        \""
+
+volumes:
+  artifacts:
