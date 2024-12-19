@@ -35,6 +35,9 @@
     EXPOSE 4004/tcp
     EXPOSE 8008
 
+    # copiar TransactionProcess
+    COPY source dest
+
     # CMD ["sawtooth-rest-api"]
 
     # para rodar o validador
