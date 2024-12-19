@@ -12,26 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ------------------------------------------------------------------------------
-'''
-This file is used for automated testing of the simplewallet client.
-'''
 
 from sawtooth_processor_test.message_factory import MessageFactory
 
-class SimplewalletMessageFactory(object):
+
+class XoMessageFactory:
     def __init__(self, signer=None):
         self._factory = MessageFactory(
-            family_name="simplewallet",
+            family_name="xo",
             family_version="1.0",
-            namespace=MessageFactory.sha512("simplewallet".encode("utf-8"))[0:6],
+            namespace=MessageFactory.sha512("xo".encode("utf-8"))[0:6],
             signer=signer)
 
-    def get_public_key(self):
-        return self._factory.get_public_key()
-
-    def _make_address(self):
+    def _game_to_address(self, game):
         return self._factory.namespace + \
-            self._factory.sha512(get_public_key())[0:64]
+            self._factory.sha512(game.encode())[0:64]
 
     def create_tp_register(self):
         return self._factory.create_tp_register()
@@ -39,46 +34,56 @@ class SimplewalletMessageFactory(object):
     def create_tp_response(self, status):
         return self._factory.create_tp_response(status)
 
-    def _create_txn(self, txn_function, action, value=None):
+    def _create_txn(self, txn_function, game, action, space=None):
         payload = ",".join([
-            str(action), str(value)
+            str(game), str(action), str(space)
         ]).encode()
 
-        addresses = [self._make_address()]
+        addresses = [self._game_to_address(game)]
 
         return txn_function(payload, addresses, addresses, [])
 
-    def create_tp_process_request(self, action, value=None):
+    def create_tp_process_request(self, action, game, space=None):
         txn_function = self._factory.create_tp_process_request
-        return self._create_txn(txn_function, action, value)
+        return self._create_txn(txn_function, game, action, space)
 
-    def create_transaction(self, action, value=None):
+    def create_transaction(self, game, action, space=None):
         txn_function = self._factory.create_transaction
-        return self._create_txn(txn_function, action, value)
+        return self._create_txn(txn_function, game, action, space)
 
-    def create_get_request(self):
-        addresses = [self._make_address()]
+    def create_get_request(self, game):
+        addresses = [self._game_to_address(game)]
         return self._factory.create_get_request(addresses)
 
-    def create_set_request(self, value):
-        address = self._make_address()
-        data = None
-        if value is not None:
-            data = str(value).encode()
-        else:
-            data = None
-        return self._factory.create_set_request({address: data})
+    def create_get_response(
+        self, game, board="---------", state="P1-NEXT", player1="", player2=""
+    ):
+        address = self._game_to_address(game)
 
-    def create_get_response(self, value):
-        address = self._make_address()
         data = None
-        if value is not None:
-            data = str(value).encode()
+        if board is not None:
+            data = ",".join([game, board, state, player1, player2]).encode()
         else:
             data = None
+
         return self._factory.create_get_response({address: data})
 
+    def create_set_request(
+        self, game, board="---------", state="P1-NEXT", player1="", player2=""
+    ):
+        address = self._game_to_address(game)
+
+        data = None
+        if state is not None:
+            data = ",".join([game, board, state, player1, player2]).encode()
+        else:
+            data = None
+
+        return self._factory.create_set_request({address: data})
+
     def create_set_response(self, game):
-        addresses = [self._make_address()]
+        addresses = [self._game_to_address(game)]
         return self._factory.create_set_response(addresses)
 
+    def get_public_key(self):
+        return self._factory.get_public_key()
