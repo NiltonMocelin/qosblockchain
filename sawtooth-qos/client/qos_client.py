@@ -21,7 +21,7 @@ import random
 import requests
 import yaml
 
-from sawtooth_xo.xo_exceptions import XoException
+from qos_exceptions import QoSException
 
 from sawtooth_signing import create_context
 from sawtooth_signing import CryptoFactory
@@ -38,7 +38,7 @@ from sawtooth_sdk.protobuf.batch_pb2 import Batch
 def _sha512(data):
     return hashlib.sha512(data).hexdigest()
 
-class XoClient:
+class QoSClient:
     def __init__(self, base_url, keyfile=None):
 
         self._base_url = base_url
@@ -51,49 +51,34 @@ class XoClient:
             with open(keyfile) as fd:
                 private_key_str = fd.read().strip()
         except OSError as err:
-            raise XoException(
+            raise QoSException(
                 'Failed to read private key {}: {}'.format(
                     keyfile, str(err))) from err
 
         try:
             private_key = Secp256k1PrivateKey.from_hex(private_key_str)
         except ParseError as e:
-            raise XoException(
+            raise QoSException(
                 'Unable to load private key: {}'.format(str(e))) from e
 
         self._signer = CryptoFactory(create_context('secp256k1')) \
             .new_signer(private_key)
-
-    def create(self, name, wait=None, auth_user=None, auth_password=None):
-        return self._send_xo_txn(
-            name,
-            "create",
+        
+    def reg_flowqos(self, action, flow_name, flow, wait=None, auth_user=None, auth_password=None):
+        # copiar de take or create
+        return self._send_qos_reg(
+            action,
+            flow,
+            flow_name,
             wait=wait,
             auth_user=auth_user,
             auth_password=auth_password)
-
-    def delete(self, name, wait=None, auth_user=None, auth_password=None):
-        return self._send_xo_txn(
-            name,
-            "delete",
-            wait=wait,
-            auth_user=auth_user,
-            auth_password=auth_password)
-
-    def take(self, name, space, wait=None, auth_user=None, auth_password=None):
-        return self._send_xo_txn(
-            name,
-            "take",
-            space,
-            wait=wait,
-            auth_user=auth_user,
-            auth_password=auth_password)
-
+    
     def list(self, auth_user=None, auth_password=None):
-        xo_prefix = self._get_prefix()
+        qos_prefix = self._get_prefix()
 
         result = self._send_request(
-            "state?address={}".format(xo_prefix),
+            "state?address={}".format(qos_prefix),
             auth_user=auth_user,
             auth_password=auth_password)
 
@@ -107,14 +92,15 @@ class XoClient:
         except BaseException:
             return None
 
-    def show(self, name, auth_user=None, auth_password=None):
-        address = self._get_address(name)
-
+    def show(self, flow_name, auth_user=None, auth_password=None):
+        address = self._get_address(flow_name)
+        print('show 3')
         result = self._send_request(
             "state/{}".format(address),
-            name=name,
+            data=flow_name,
             auth_user=auth_user,
             auth_password=auth_password)
+        print('show 4')
         try:
             return base64.b64decode(yaml.safe_load(result)["data"])
 
@@ -129,21 +115,21 @@ class XoClient:
                 auth_password=auth_password)
             return yaml.safe_load(result)['data'][0]['status']
         except BaseException as err:
-            raise XoException(err) from err
+            raise QoSException(err) from err
 
     def _get_prefix(self):
-        return _sha512('xo'.encode('utf-8'))[0:6]
+        return _sha512('qos'.encode('utf-8'))[0:6]
 
-    def _get_address(self, name):
-        xo_prefix = self._get_prefix()
-        game_address = _sha512(name.encode('utf-8'))[0:64]
-        return xo_prefix + game_address
+    def _get_address(self, flow_name):
+        qos_prefix = self._get_prefix()
+        flow_address = _sha512(flow_name.encode('utf-8'))[0:64]
+        return qos_prefix + flow_address
 
     def _send_request(self,
                       suffix,
                       data=None,
                       content_type=None,
-                      name=None,
+                      flow_name=None,
                       auth_user=None,
                       auth_password=None):
         if self._base_url.startswith("http://"):
@@ -160,45 +146,51 @@ class XoClient:
 
         if content_type is not None:
             headers['Content-Type'] = content_type
-
+        print('send_request ', url, ' ', headers, ' ', data)
         try:
             if data is not None:
                 result = requests.post(url, headers=headers, data=data)
             else:
                 result = requests.get(url, headers=headers)
-
+            
+            print('send_request', result.status_code)
             if result.status_code == 404:
-                raise XoException("No such game: {}".format(name))
+                raise QoSException("No such flow: {}".format(flow_name))
 
             if not result.ok:
-                raise XoException("Error {}: {}".format(
+                raise QoSException("Error {}: {}".format(
                     result.status_code, result.reason))
 
         except requests.ConnectionError as err:
-            raise XoException(
+            raise QoSException(
                 'Failed to connect to {}: {}'.format(url, str(err))) from err
 
         except BaseException as err:
-            raise XoException(err) from err
+            raise QoSException(err) from err
 
         return result.text
 
-    def _send_xo_txn(self,
-                     name,
+    def _send_qos_reg(self,
                      action,
-                     space="",
+                     flow_name,
+                     flow,
                      wait=None,
                      auth_user=None,
                      auth_password=None):
+        # alterar aqui com  o payload que iremos enviar acao(string),flow(json)
         # Serialization is just a delimited utf-8 encoded string
-        payload = ",".join([name, action, str(space)]).encode()
+        # payload = "|".join([action, flow]).encode()
+        flow = """{"name":"192.168.0.0-192.168.0.1-5000-5000-tcp","state":"Going","src_port":"5000","dst_port":"5000","proto":"tcp","qos":[],"freds":[]}"""
 
+        payload = "{\"action\":\"%s\", \"flow_name\":\"%s\", \"flow\":%s}" % ("reg_qos", flow_name,flow)
+        payload = payload.encode()
+        
         # Construct the address
-        address = self._get_address(name)
+        address = self._get_address(flow_name)
 
         header = TransactionHeader(
             signer_public_key=self._signer.get_public_key().as_hex(),
-            family_name="xo",
+            family_name="qos",
             family_version="1.0",
             inputs=[address],
             outputs=[address],

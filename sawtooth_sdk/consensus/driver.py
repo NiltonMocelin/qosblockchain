@@ -1,4 +1,4 @@
-# Copyright 2016 Intel Corporation
+# Copyright 2018 Intel Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,8 +13,18 @@
 # limitations under the License.
 # -----------------------------------------------------------------------------
 
-__all__ = [
-    'qos_cli',
-    'qos_client',
-    'qos_exceptions'
-]
+import abc
+
+
+class Driver(metaclass=abc.ABCMeta):
+    @abc.abstractmethod
+    def __init__(self, engine):
+        pass
+
+    @abc.abstractmethod
+    def start(self, endpoint):
+        pass
+
+    @abc.abstractmethod
+    def stop(self):
+        pass

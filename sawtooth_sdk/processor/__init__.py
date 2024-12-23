@@ -11,10 +11,22 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# -----------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
+'''The processor module defines:
+
+1. A TransactionHandler interface to be
+used to create new transaction families.
+
+2. A high-level, general purpose TransactionProcessor to which any
+number of handlers can be added.
+
+3. A Context class used to abstract getting and setting addresses in
+global validator state.
+'''
 
 __all__ = [
-    'qos_cli',
-    'qos_client',
-    'qos_exceptions'
+    'core',
+    'context',
+    'exceptions'
 ]

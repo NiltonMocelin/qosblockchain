@@ -8,7 +8,7 @@ import sys
 import signal
 
 def signal_handler(sig, frame):
-    print('You pressed Ctrl+C!')
+    print('You pressed Ctrl+C! \n Stopping and removing the containers...')
     sawtooth_validator = docker.from_env()
 
     # fechar os conatiners e remover
@@ -26,7 +26,10 @@ if (len(sys.argv) < 5):
 
 nome_blockchain = sys.argv[2]
 qtd_pares =       sys.argv[4]
-ip_pares =        sys.argv[6].split(',') # adicionar isso no entrypoint depois, nos pares
+ip_pares = []
+
+if int(qtd_pares) > 0:
+  ip_pares =        sys.argv[6].split(',') # adicionar isso no entrypoint depois, nos pares
 
 # armazenar isso tudo dentro de uma lista
 
@@ -101,7 +104,7 @@ if CONTAINER_NAME in containers_list:
 container_id = sawtooth_validator.api.create_container(
     image='qosblockchainv1', name=CONTAINER_NAME, command='ls', ports=[(4004, 'tcp'),(5050,'tcp'), (8008,'tcp'), (8800,'tcp')], entrypoint=entrypoint,
     host_config=sawtooth_validator.api.create_host_config(port_bindings={
-        '4004/tcp': 4567,
+        '4004/tcp': 4004,
         '8008/tcp': 8008,
         '8800/tcp': 8800,
         '5050/tcp':None
@@ -118,10 +121,12 @@ print("Container ID:", CONTAINER_ID)
 exec_settings_tp = sawtooth_validator.api.exec_create(container=container_id, cmd="settings-tp -vv -C tcp://{}:{}".format(VALIDADOR_IP,VALIDADOR_PORT))
 exec_rest_api = sawtooth_validator.api.exec_create(container=container_id, cmd="sawtooth-rest-api -vv -C tcp://{}:{} --bind {}:{}".format(VALIDADOR_IP,VALIDADOR_PORT, REST_API_IP, REST_API_PORT))
 exec_consensus = sawtooth_validator.api.exec_create(container=container_id, cmd="devmode-engine-rust -C tcp://{}:{}".format(VALIDADOR_IP,CONSENSUS_PORT))
+# exec_processor = sawtooth_validator.api.exec_create(container=container_id, cmd="python processor/main.py -C tcp://{}:{}".format(VALIDADOR_IP,VALIDADOR_PORT))
 
 sawtooth_validator.api.exec_start(exec_settings_tp, detach=True)
 sawtooth_validator.api.exec_start(exec_rest_api, detach=True)
 sawtooth_validator.api.exec_start(exec_consensus, detach=True)
+# sawtooth_validator.api.exec_start(exec_processor, detach=True)
 
 signal.signal(signal.SIGINT, signal_handler)
 print('Press Ctrl+C')

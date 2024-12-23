@@ -19,7 +19,7 @@ from sawtooth_sdk.processor.exceptions import InternalError
 import json
 
 #ledger para a comunicação entre AS A e AS B
-QOS_NAMESPACE = hashlib.sha512('ABqos'.encode("utf-8")).hexdigest()[0:6]
+QOS_NAMESPACE = hashlib.sha512('qos'.encode("utf-8")).hexdigest()[0:6]
 
 
 # transacao = {
@@ -155,11 +155,11 @@ class QoSState:
         self._context = context
         self._address_cache = {}
 
-    def flow_start(self, endpair_name, flow:Flow):
-        return
+    # def flow_start(self, endpair_name, flow:Flow):
+    #     return
     
-    def flow_end(self, endpair_name, flow:Flow):
-        return
+    # def flow_end(self, endpair_name, flow:Flow):
+    #     return
     
     def reg_qos(self, flow_name, flow:Flow):
         """Register (store) qos of a flow in the validator state.

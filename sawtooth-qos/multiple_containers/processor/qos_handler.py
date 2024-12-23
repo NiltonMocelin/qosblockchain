@@ -59,13 +59,18 @@ class QoSTransactionHandler(TransactionHandler):
         qos_state = QoSState(context)
 
         if action == 'reg_qos':
+            
+            if flow_json == None:
+                print("nenhum fluxo foi informado!")
+                return
             print('registrando qos')
 
             qos_state.reg_qos(flow.name, flow)
 
         if action == 'get_qos':
             print('recuperando qos')
-            _display(flow=flow)
+            flow_recuperado = qos_state.get_qos(flow.name)
+            _display(flow=flow_recuperado)
     
 
 def _display(flow:Flow):
