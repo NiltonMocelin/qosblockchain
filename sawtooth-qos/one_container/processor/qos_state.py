@@ -170,7 +170,13 @@ class QoSState:
         """
 
         ### aqui
-        flow_existente:Flow = self._load_qos(flow_name=flow_name)
+        flow_recuperado = self._load_qos(flow_name=flow_name)
+        print('flow_recuperado: flowname:', flow_name, ' --> flow:', flow_recuperado)
+
+        flow_existente:Flow = None 
+        
+        if flow_recuperado!=None:
+            flow_existente = fromJsonToFlow(flow_recuperado)
 
         # se ja existe, entao, adicionar as informacoes do fluxo no existente (eh um update de estado)
         if flow_existente != None:
@@ -233,7 +239,7 @@ class QoSState:
 
     def _store_qos(self, flow_name, flow):
         address = _make_qos_address(flow_name)
-
+        print('_store: flow_name:',flow_name)
         state_data = self._serialize(flow)
 
         self._address_cache[address] = state_data
@@ -325,5 +331,7 @@ class QoSState:
 
 
 def fromJsonToFlow(json)->Flow:
-    f = Flow(src_port='5000')
+    f = Flow(name=json['name'], src_port= json['src_port'], dst_port=json['dst_port'], proto=json['proto'], state=json['state'], duration=[], qos=json['qos'], freds=json['freds'])
     return f
+
+#flow = """{"name":"192.168.0.0-192.168.0.1-5000-5000-tcp","state":"Going","src_port":"5000","dst_port":"5000","proto":"tcp","qos":[],"freds":[]}"""

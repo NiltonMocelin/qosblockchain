@@ -183,7 +183,7 @@ class QoSClient:
         # alterar aqui com  o payload que iremos enviar acao(string),flow(json)
         # Serialization is just a delimited utf-8 encoded string
         # payload = "|".join([action, flow]).encode()
-        flow = """{"name":"192.168.0.0-192.168.0.1-5000-5001-tcp","state":"Going","src_port":"5000","dst_port":"5000","proto":"tcp","qos":[],"freds":[]}"""
+        # flow = """{"name":"192.168.0.0-192.168.0.1-5000-5000-tcp","state":"Going","src_port":"5000","dst_port":"5000","proto":"tcp","qos":[],"freds":[]}"""
 
         payload = "{\"action\":\"%s\", \"flow_name\":\"%s\", \"flow\":%s}" % ("reg_qos", flow_name,flow)
         payload = payload.encode()

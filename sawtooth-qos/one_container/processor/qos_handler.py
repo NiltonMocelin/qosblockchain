@@ -75,17 +75,19 @@ class QoSTransactionHandler(TransactionHandler):
             print('registrando qos')
 
             qos_state.reg_qos(flow_name, flow)
+        else:
+            raise InvalidTransaction('Invalid action')
 
-        if action == 'show':
-            print('recuperando um fluxo')
-            flow_recuperado = qos_state.get_qos(flow_name)
-            _display(flow=flow_recuperado)
+        # if action == 'show':
+        #     print('recuperando um fluxo')
+        #     flow_recuperado = qos_state.get_qos(flow_name)
+        #     _display(flow=flow_recuperado)
 
-        if action == 'list':
-            print('recuperando todos os fluxos')
-            ## arrumar
-            flow_recuperado = qos_state.get_qos(flow_name)
-            _display(flow=flow_recuperado)
+        # if action == 'list':
+        #     print('recuperando todos os fluxos')
+        #     ## arrumar
+        #     flow_recuperado = qos_state.get_qos(flow_name)
+        #     _display(flow=flow_recuperado)
         
         print("[Fim] transacao")
     
