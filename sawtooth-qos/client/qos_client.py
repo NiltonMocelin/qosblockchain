@@ -95,9 +95,10 @@ class QoSClient:
     def show(self, flow_name, auth_user=None, auth_password=None):
         address = self._get_address(flow_name)
         print('show 3')
+        # data = "{\"action\":\"%s\", \"flow_name\":\"%s\", \"flow\":{}}" % ("show", flow_name)
+        
         result = self._send_request(
             "state/{}".format(address),
-            data=flow_name,
             auth_user=auth_user,
             auth_password=auth_password)
         print('show 4')
@@ -148,6 +149,8 @@ class QoSClient:
             headers['Content-Type'] = content_type
         print('send_request ', url, ' ', headers, ' ', data)
         try:
+            print('url:',url, '; headers: ', headers, '; data: ', data)
+            # data = "{\"action\":\"%s\", \"flow_name\":\"%s\", \"flow\":%s}" % ("show", flow_name,"{}")
             if data is not None:
                 result = requests.post(url, headers=headers, data=data)
             else:
@@ -180,7 +183,7 @@ class QoSClient:
         # alterar aqui com  o payload que iremos enviar acao(string),flow(json)
         # Serialization is just a delimited utf-8 encoded string
         # payload = "|".join([action, flow]).encode()
-        flow = """{"name":"192.168.0.0-192.168.0.1-5000-5000-tcp","state":"Going","src_port":"5000","dst_port":"5000","proto":"tcp","qos":[],"freds":[]}"""
+        flow = """{"name":"192.168.0.0-192.168.0.1-5000-5001-tcp","state":"Going","src_port":"5000","dst_port":"5000","proto":"tcp","qos":[],"freds":[]}"""
 
         payload = "{\"action\":\"%s\", \"flow_name\":\"%s\", \"flow\":%s}" % ("reg_qos", flow_name,flow)
         payload = payload.encode()

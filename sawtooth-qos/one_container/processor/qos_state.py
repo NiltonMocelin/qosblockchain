@@ -78,17 +78,17 @@ class EndPairQoS: ## IDEIA: apenas registrar QoS quando perceber mudança signif
 
 class Flow:
     # dissecar o FRED aqui
-    def __init__(self, src_port:str):
-        self.name:str = ''
+    def __init__(self, name:str, src_port:str, dst_port:str, proto:str, duration:list, qos:list, state:str, freds:list):
+        self.name:str = name
         self.src_port:str = src_port
-        self.dst_port:str = ''
-        self.proto:str=''
+        self.dst_port:str = dst_port
+        self.proto:str= proto
         # self.as_duration:list[:str] = ['AS1001:50s'] # duração que cada AS participou do fluxo
         # self.as_list:list[:str] = ['AS1001', 'AS1002'] #text/public key ...
-        self.duration:list[:str] = ['50s']
-        self.qoss: list[QoS] = [] # class QoS # lista de registros de qos para um fluxo
-        self.state:str = 'Going' #Going, Stoped
-        self.freds:list[Fred] = [] #caso existam freds diferentes, serão armazenados aqui
+        self.duration:list[:str] = duration
+        self.qoss: list[QoS] = qos # class QoS # lista de registros de qos para um fluxo
+        self.state:str = state #Going, Stoped
+        self.freds:list[Fred] = freds #caso existam freds diferentes, serão armazenados aqui
 
     def toString(self):
 

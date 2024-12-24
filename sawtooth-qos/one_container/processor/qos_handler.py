@@ -47,6 +47,7 @@ class QoSTransactionHandler(TransactionHandler):
                 
     def apply(self, transaction, context):
 
+        print("[Inicio] transacao")
         header = transaction.header
         signer = header.signer_public_key
 
@@ -54,8 +55,13 @@ class QoSTransactionHandler(TransactionHandler):
 
         print('header ', header, '; signer ', signer, '; ',qos_payload)
 
-        flow_json = json.loads(qos_payload.flow_str)
+        print('flow_str: ', str(qos_payload.flow_str))
+
+        flow_json = qos_payload.flow_str
         flow:Flow = fromJsonToFlow(flow_json)
+
+        print("FLOW to string: ", flow.toString())
+
         action = qos_payload.action
         flow_name = qos_payload.flow_name
 
@@ -80,6 +86,8 @@ class QoSTransactionHandler(TransactionHandler):
             ## arrumar
             flow_recuperado = qos_state.get_qos(flow_name)
             _display(flow=flow_recuperado)
+        
+        print("[Fim] transacao")
     
 
 def _display(flow:Flow):

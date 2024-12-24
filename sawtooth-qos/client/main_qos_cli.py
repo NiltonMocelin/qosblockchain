@@ -262,9 +262,8 @@ def do_show(args):
     client = QoSClient(base_url=url, keyfile=None)
 
     print('show 1')
-    data = "{\"action\":\"%s\", \"flow_name\":\"%s\", \"flow\":%s}" % ("show", flow_name,"{}")
     
-    data = client.show(data, auth_user=auth_user, auth_password=auth_password)
+    data = client.show(flow_name, auth_user=auth_user, auth_password=auth_password)
     
     print('show 2')
     if data is not None:

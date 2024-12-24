@@ -25,18 +25,26 @@ class QoSPayload:
             # pensar nas informacoes a serem armazenadas
             #goal_classe, goal_app, goal_service, goal_bandwidth, goal_latency, 
             #
+            print(payload.decode())
+            print("QoSPayload printed")
+
             payload_json = json.loads(payload.decode())
+
+            print("QoSPayload payload_json")
+
             action = payload_json["action"]
             flow_name = payload_json["flow_name"]
-            flow_str = payload_json["flow_str"]
+            flow_str = payload_json["flow"]
 
+            print("QoSPayload loaded")
+        # aqui
         except ValueError as e:
             raise InvalidTransaction("Invalid payload serialization") from e
 
         if not action:
             raise InvalidTransaction('Action is required')
 
-        if (action == 'reg_qos' or action == 'del_qos') or not (flow_str or flow_name):
+        if (action == 'reg_qos' or action == 'del_qos') and not (flow_str or flow_name):
             raise InvalidTransaction('Flow is required')
         
         elif action == 'show' and not flow_name:
@@ -48,6 +56,8 @@ class QoSPayload:
                 print('a')
             except ValueError:
                 raise InvalidTransaction('Error') from ValueError
+
+        print("QoSPayload saiu")
 
         self._action = action
         self._flow_str = flow_str
