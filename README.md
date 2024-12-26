@@ -1,5 +1,7 @@
 # qosblockchain
 
+* Algumas explicações de design estão em notebook.ipynb
+
 <h3>Dependências:</h3>
 
 * Se faltar alguma, provavelmente python vai avisar (olhar as importações do client e do one-container/processor)
@@ -24,7 +26,7 @@
 
 * Necessário utilizar essas chaves para enviar transações (em redes permissionadas)
 
-<h2> Como interagir (versão atual 1-validador) <h2>
+<h2> Como interagir (versão atual 1-validador) </h2>
 
 * Versão atual (folders): one-container e client
 
@@ -64,7 +66,15 @@
 
 * A defesa e justificativa devem ser melhoradas. No entanto, existem diversos pontos positivos nessa abordagem.
 
-<h3> Limitações <h3>
+<h3>Multiplos validadores - pbft</h3>
+
+* Para configurar uma rede blockchain com consenso pbft, são necessários pelo menos 4 nós.
+
+* Para subir o nó validador que gera o bloco gênesis, é necessário que as 4 chaves publicas sejam recebidas. No exemplo (sawtooth-default-pbft.yaml) se utiliza um -> do while para esperar até receber todas as chaves na pasta /pbft-shared/validators/
+
+* Os nós enviam as chaves publicas (geradas por sawadm) que estão armazenadas em /pbft-shared/validators para o nó definido pelo argumento  --peers tcp://validator-0:8800 (endereço do nó gÊnesis:porta da rede)
+
+<h3> Limitações </h3>
 
 * Escalabilidade pode ser um problema (ainda não investigado)
 

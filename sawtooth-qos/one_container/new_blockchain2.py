@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+
+## Consensus: dev-mode
+
 try:
     import docker
 except:
@@ -20,9 +23,15 @@ def signal_handler(sig, frame):
     print("Container PARADO e REMOVIDO -> Nome:{} ID:{}".format(CONTAINER_NAME, CONTAINER_ID))
     sys.exit(0)
 
-if (len(sys.argv) < 13):
-  print("Invalid args-> python new_blockchain1.py -name <id-new-blockchain> -validator_port <port> -rest_port <port> -consensus_port <port> -network_port <port> -npairs 3 -ippairs x.x.x.x:port,y.y.y.y:port")
+SEEDS=''
+print(len(sys.argv))
+if (len(sys.argv) != 11):
+  print("Invalid args-> python new_blockchain1.py -is_main <true-false> -name <id-new-blockchain> -validator_port 4004 -rest_port 8008 -consensus_port 5050 -network_port 8800")
+  print("or -> python new_blockchain1.py -name <id-new-blockchain> -validator_port 4004 -rest_port 8008 -consensus_port 5050 -network_port 8800 -seeds <ip-validator0:port>")
   exit(0)
+
+if (len(sys.argv) == 13 ):
+  SEEDS = sys.argv[12]
 
 nome_blockchain = sys.argv[2]
 
@@ -32,16 +41,19 @@ REST_API_PORT  = sys.argv[6] #8008
 CONSENSUS_PORT = sys.argv[8] #5050
 NETWORK_PORT   = sys.argv[10] #8800
 
-qtd_pares =       sys.argv[12]
-ip_pares = []
+# ip_pares = []
 
+# peers = ''
 
-if int(qtd_pares) > 0:
-  ip_pares =        sys.argv[6].split(',') # adicionar isso no entrypoint depois, nos pares
+# if int(qtd_pares) > 0:
+#   ip_pares =        sys.argv[14].split(',') # adicionar isso no entrypoint depois, nos pares
 
-  if len(ip_pares) != qtd_pares:
-     print("Invalid pairs: expected ", qtd_pares)
-     exit(0)
+#   if len(ip_pares) != qtd_pares:
+#      print("Invalid pairs: expected ", qtd_pares)
+#      exit(0)
+#   peers += '--peers'
+#   for peer in ip_pares:
+#      peers+= ' tcp://'+peer
 
 
 ####################### subir container validador ######################
@@ -81,15 +93,20 @@ entrypoint = "bash -c \"\
     -o config.batch && \
   sawadm genesis config-genesis.batch config.batch  && \
   sawtooth-validator -vv \
-    --endpoint tcp://{}:{} \
+    --endpoint tcp://{} \
     --bind component:tcp://{}:{} \
     --bind network:tcp://{}:{} \
     --bind consensus:tcp://{}:{} \
     --scheduler parallel \
-    --peering static \
+    --peering dynamic \
     --maximum-peer-connectivity 10000 \
-    --peers tcp://{}:{}\
-  \"".format(VALIDADOR_IP, NETWORK_PORT, REST_API_IP, VALIDADOR_PORT, NETWORK_IP, NETWORK_PORT, CONSENSUS_IP, CONSENSUS_PORT, VALIDADOR_IP, VALIDADOR_PORT)#,VALIDADOR_IP, VALIDADOR_PORT,VALIDADOR_IP, VALIDADOR_PORT,REST_API_IP, REST_API_PORT, CONSENSUS_IP, CONSENSUS_PORT)
+    %s \
+  \"".format(VALIDADOR_IP, VALIDADOR_PORT, REST_API_IP, VALIDADOR_PORT, NETWORK_IP, NETWORK_PORT, CONSENSUS_IP, CONSENSUS_PORT, '--seeds tcp://' + SEEDS if SEEDS != '' else '')
+# --network-auth trust \
+
+# --seeds tcp://validator-0:8800 \
+
+
 # essas portas e ips ein... mas é o que traduzi do single-node example
 # # sawtooth_validator.api.exec_create(container=container_id, cmd=cmd) # isso aqui seria caso tentar colocar vários blockchain no mesmo container(já existente)
 # """settings-tp -vv -C tcp://{}:{} &
