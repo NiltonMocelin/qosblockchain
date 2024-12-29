@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-## Consensus: dev-mode
+## Consensus: Practical Byzantine Fault Tolerance
 
 try:
     import docker
@@ -91,9 +91,9 @@ REST_API_IP  = '0.0.0.0'#'eth0'
 CONSENSUS_IP = '0.0.0.0'#'eth0'
 NETWORK_IP   = '0.0.0.0'#'eth0'
 
-
 # nem tudo do sugerido é necessário pois não vai haver configuracao anterior. Algumas coisas foram cortadas
-main_validator = "while [[ ! -f /pbft-shared/validators/validator-1.pub || \
+main_validator = "while [[ ! -f /pbft-shared/validators/validator-0.pub || \
+                 ! -f /pbft-shared/validators/validator-1.pub || \
                  ! -f /pbft-shared/validators/validator-2.pub || \
                  ! -f /pbft-shared/validators/validator-3.pub ]]; \
           do sleep 1; done &&\
@@ -102,7 +102,7 @@ main_validator = "while [[ ! -f /pbft-shared/validators/validator-1.pub || \
             -k /etc/sawtooth/keys/validator.priv \
             sawtooth.consensus.algorithm.name=pbft \
             sawtooth.consensus.algorithm.version=1.0 \
-            sawtooth.consensus.pbft.members=\\['\"'$$(cat /pbft-shared/validators/validator-0.pub)'\"','\"'$$(cat /pbft-shared/validators/validator-1.pub)'\"','\"'$$(cat /pbft-shared/validators/validator-2.pub)'\"','\"'$$(cat /pbft-shared/validators/validator-3.pub)'\"','\"'$$(cat /pbft-shared/validators/validator-4.pub)'\"'\\] \
+            sawtooth.consensus.pbft.members=\\['\"'$$(cat /pbft-shared/validators/validator-0.pub)'\"','\"'$$(cat /pbft-shared/validators/validator-1.pub)'\"','\"'$$(cat /pbft-shared/validators/validator-2.pub)'\"','\"'$$(cat /pbft-shared/validators/validator-3.pub)'\"'\\] \
             sawtooth.publisher.max_batches_per_block=1200 \
             -o config.batch &&\
           sawadm genesis config-genesis.batch config.batch &&"
@@ -112,11 +112,20 @@ if VALIDADOR_NAME in containers_list:
     print("ID existente, escolha outro !\nNenhum container foi criado")
     exit(0)
 
+# as chaves devem ser criadas por fora e copiadas para dentro
+# sawadm keygen &&\ (estaca antes de mkdir -p)
+
 entrypoint = "bash -c \"\
-  sawadm keygen &&\
-  mkdir -p /pbft-shared/validators || true && \
-  cp /etc/sawtooth/keys/validator.pub /pbft-shared/validators/validator-{}.pub && \
-  cp /etc/sawtooth/keys/validator.priv /pbft-shared/validators/validator-{}.priv && \
+  if [ -e /pbft-shared/validators/validator-0.priv ]; then \
+    cp /pbft-shared/validators/validator-0.pub /etc/sawtooth/keys/validator.pub \
+    cp /pbft-shared/validators/validator-0.priv /etc/sawtooth/keys/validator.priv \
+  fi && \
+  if [ ! -e /etc/sawtooth/keys/validator.priv ]; then \
+    sawadm keygen \
+    mkdir -p /pbft-shared/validators || true \
+    cp /etc/sawtooth/keys/validator.pub /pbft-shared/validators/validator-0.pub \
+    cp /etc/sawtooth/keys/validator.priv /pbft-shared/validators/validator-0.priv \
+  fi &&  \
   {} \
   sawtooth keygen my_key && \
   sawtooth-validator -vv \
@@ -128,20 +137,10 @@ entrypoint = "bash -c \"\
     --peering static \
     --maximum-peer-connectivity 10000 \
     {} \
-    {} \
-  \"".format(HOST_NUMBER, HOST_NUMBER, main_validator if HOST_NUMBER == '0' else '', NETWORK_IP, NETWORK_PORT, VALIDADOR_IP, VALIDADOR_PORT, NETWORK_IP, NETWORK_PORT, CONSENSUS_IP, CONSENSUS_PORT, PEERS_IP + ' && ', 'python main.py')
+  \"".format(HOST_NUMBER, HOST_NUMBER, main_validator if HOST_NUMBER == '0' else '', NETWORK_IP, NETWORK_PORT, VALIDADOR_IP, VALIDADOR_PORT, NETWORK_IP, NETWORK_PORT, CONSENSUS_IP, CONSENSUS_PORT, PEERS_IP)#, 'python main.py')
 # --network-auth trust \
 
-print("code: ", entrypoint)
-
-# --seeds tcp://validator-0:8800 \
-
-
-# essas portas e ips ein... mas é o que traduzi do single-node example
-# # sawtooth_validator.api.exec_create(container=container_id, cmd=cmd) # isso aqui seria caso tentar colocar vários blockchain no mesmo container(já existente)
-# """settings-tp -vv -C tcp://{}:{} &
-#   sawtooth-rest-api -vv -C tcp://{}:{} --bind {}:{} &
-#   devmode-engine-rust -C tcp://{}:{} & echo DONE!"""
+print("entrypoint code: ", entrypoint)
 
 CONTAINER_NAME = "qos" + nome_blockchain
 
@@ -152,7 +151,7 @@ if CONTAINER_NAME in containers_list:
 ## subindo um container apenas -- bloqueia o fluxo do codigo !
 # sawtooth_validator.containers.run(image="qosblockchainv1", name=CONTAINER_NAME, ports={'4004/tcp':VALIDADOR_PORT, '8008/tcp':REST_API_PORT,'8800/tcp':NETWORK_PORT}, entrypoint=entrypoint)
 
-#alternativo
+#alternativo --> aparentemnete só precisa exportar as portas REST-API para os clients acessarem e a porta de REDE para comunicação inter-validators
 container_id = sawtooth_validator.api.create_container(
     image='qosblockchainv1', name=CONTAINER_NAME, command='ls', ports=[(4004, 'tcp'),(5050,'tcp'), (8008,'tcp'), (8800,'tcp')], entrypoint=entrypoint,
     host_config=sawtooth_validator.api.create_host_config(port_bindings={
@@ -162,7 +161,6 @@ container_id = sawtooth_validator.api.create_container(
         '5050/tcp':None
     })
 )
-sawtooth_validator.api.start(container_id)
 
 CONTAINER_ID = sawtooth_validator.containers.get(CONTAINER_NAME)
 
@@ -170,16 +168,16 @@ print("Sucesso !")
 print("Container Name:", CONTAINER_NAME)
 print("Container ID:", CONTAINER_ID)
 
+# ATIVOS
 exec_settings_tp = sawtooth_validator.api.exec_create(container=container_id, cmd="settings-tp -vv -C tcp://{}:{}".format(VALIDADOR_IP,VALIDADOR_PORT))
 exec_rest_api = sawtooth_validator.api.exec_create(container=container_id, cmd="sawtooth-rest-api -vv -C tcp://{}:{} --bind {}:{}".format(VALIDADOR_IP,VALIDADOR_PORT, REST_API_IP, REST_API_PORT))
-# exec_consensus = sawtooth_validator.api.exec_create(container=container_id, cmd="devmode-engine-rust -C tcp://{}:{}".format(VALIDADOR_IP,CONSENSUS_PORT))
-exec_consensus = sawtooth_validator.api.exec_create(container=container_id, cmd="pbft-engine -vv --connect tcp://{}:{}".format(VALIDADOR_IP,CONSENSUS_PORT))
-# exec_processor = sawtooth_validator.api.exec_create(container=container_id, cmd="python processor/main.py -C tcp://{}:{}".format(VALIDADOR_IP,VALIDADOR_PORT))
+exec_consensus = sawtooth_validator.api.exec_create(container=container_id, cmd="pbft-engine -vv --connect tcp://{}:{}".format(CONSENSUS_IP,CONSENSUS_PORT))
+
 
 sawtooth_validator.api.exec_start(exec_settings_tp, detach=True)
 sawtooth_validator.api.exec_start(exec_rest_api, detach=True)
 sawtooth_validator.api.exec_start(exec_consensus, detach=True)
-# sawtooth_validator.api.exec_start(exec_processor, detach=True)
+
 
 signal.signal(signal.SIGINT, signal_handler)
 print('Press Ctrl+C')

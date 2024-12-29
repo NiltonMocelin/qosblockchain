@@ -1,0 +1,39 @@
+echo "d45e8c3fb6b09e5fdb2258545ddcf511d47c67d836612236d47f91e3f4a98422" > /etc/sawtooth/keys/validator.priv && \
+echo "03a2ee5342ef6c664e6426603800a548ac50671d82cfa0394294dedc98c6200cb1" > /etc/sawtooth/keys/validator.pub && \
+echo "d45e8c3fb6b09e5fdb2258545ddcf511d47c67d836612236d47f91e3f4a98422" > /pbft-shared/validators/validator-0.priv && \
+echo "03a2ee5342ef6c664e6426603800a548ac50671d82cfa0394294dedc98c6200cb1" > /pbft-shared/validators/validator-0.pub && \
+echo "a9147903d33cedec03f300448ca7677bac6297d04335defbad73a6094429ee79" > /pbft-shared/validators/validator-1.priv && \
+echo "02208f3361a5ed297b1470b7b5faa9685611a92183610021d79282b889c80b0bcc" > /pbft-shared/validators/validator-1.pub && \
+echo "cef2f165bb2b2e04109629813dc27bd2ca24c6bcb12a775dd0b7d614deb09900" > /pbft-shared/validators/validator-2.priv && \
+echo "0217867f23c354ae349b863aba874b03288c379f002bdc1e0c4216f66941f6c3f1" > /pbft-shared/validators/validator-2.pub && \
+echo "78a9d1279b1f8c2c3b399c1da5bc68b17430d6e8eb702763dc8681ae353470c5" > /pbft-shared/validators/validator-3.priv && \
+echo "0209705904a3a06474bef757a675a5a83317ffd6dec1ac9b667c385f7d5d22db20" > /pbft-shared/validators/validator-3.pub
+
+
+sawtooth.consensus.pbft.members=["03a2ee5342ef6c664e6426603800a548ac50671d82cfa0394294dedc98c6200cb1", "02208f3361a5ed297b1470b7b5faa9685611a92183610021d79282b889c80b0bcc", "0217867f23c354ae349b863aba874b03288c379f002bdc1e0c4216f66941f6c3f1", "0209705904a3a06474bef757a675a5a83317ffd6dec1ac9b667c385f7d5d22db20"]
+
+
+sawset proposal create \
+            -k /etc/sawtooth/keys/validator.priv \
+            sawtooth.consensus.algorithm.name=pbft \
+            sawtooth.consensus.algorithm.version=1.0 \
+            sawtooth.consensus.pbft.members=\\['\\\"'03a2ee5342ef6c664e6426603800a548ac50671d82cfa0394294dedc98c6200cb1'\\\"', '\\\"'"02208f3361a5ed297b1470b7b5faa9685611a92183610021d79282b889c80b0bcc'\\\"', '\\\"'"0217867f23c354ae349b863aba874b03288c379f002bdc1e0c4216f66941f6c3f1'\\\"', '\\\"'"0209705904a3a06474bef757a675a5a83317ffd6dec1ac9b667c385f7d5d22db20'\\\"'\\] \
+            sawtooth.publisher.max_batches_per_block=1200 \
+            -o config.batch &&\
+          sawadm genesis config-genesis.batch config.batch
+
+sawset proposal create \
+            -k /etc/sawtooth/keys/validator.priv \
+            sawtooth.consensus.algorithm.name=pbft \
+            sawtooth.consensus.algorithm.version=1.0 \
+            sawtooth.consensus.pbft.members=\\['\\\"'03a2ee5342ef6c664e6426603800a548ac50671d82cfa0394294dedc98c6200cb1'\\\"', '\\\"'02208f3361a5ed297b1470b7b5faa9685611a92183610021d79282b889c80b0bcc'\\\"', '\\\"'0217867f23c354ae349b863aba874b03288c379f002bdc1e0c4216f66941f6c3f1'\\\"', '\\\"'0209705904a3a06474bef757a675a5a83317ffd6dec1ac9b667c385f7d5d22db20'\\\"'] \
+            sawtooth.publisher.max_batches_per_block=1200 \
+            -o config.batch &&\
+          sawadm genesis config-genesis.batch config.batch
+
+
+sawset proposal create \
+    -k /etc/sawtooth/keys/validator.priv \
+    sawtooth.consensus.algorithm.name=Devmode \
+    sawtooth.consensus.algorithm.version=0.1 \
+    -o config.batch

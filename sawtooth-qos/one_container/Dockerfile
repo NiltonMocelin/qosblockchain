@@ -30,7 +30,7 @@ LABEL install-type=repo
 RUN echo "deb [arch=amd64] http://repo.sawtooth.me/ubuntu/chime/stable bionic universe" >> /etc/apt/sources.list  && (apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 8AA7AF1F1091A5FD  || apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 8AA7AF1F1091A5FD)  && apt-get update
     
 # instalar os pacotes importantes
-RUN apt-get install -y -q sawtooth python3-sawtooth-sdk python3-sawtooth-rest-api python3-sawtooth-validator sawtooth-settings-tp sawtooth-pbft-engine sawtooth-devmode-engine-rust && apt-get clean  && rm -rf /var/lib/apt/lists/*
+RUN apt-get install -y -q sawtooth python3-sawtooth-sdk python3-sawtooth-rest-api python3-sawtooth-validator sawtooth-settings-tp sawtooth-pbft-engine sawtooth-devmode-engine-rust python3-sawtooth-poet-engine python3-sawtooth-poet-cli python3-sawtooth-poet-families && apt-get clean  && rm -rf /var/lib/apt/lists/*
 # precisa installar esse tbm ? sawtooth SIM -> o validador utiliza varias ferramentas desse pacote (ex: sawtooth keygen)
 
 EXPOSE 4004/tcp
