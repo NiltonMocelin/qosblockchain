@@ -1,0 +1,108 @@
+# Copyright 2019 Cargill Incorporated
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+version: '3.6'
+
+services:
+
+# -------------=== qos-blockchain ===-------------
+
+  qos-blockchain-as1_as2-4:
+    image: qosblockchainv1
+    container_name: sth-qosblockchain-as1_as2-4
+    expose:
+      - 4004
+    command: python3 main.py -C tcp://validator-as1_as2-4:4004
+    stop_signal: SIGKILL
+
+# -------------=== rest api ===-------------
+
+  rest-api-as1_as2-4:
+    image: hyperledger/sawtooth-rest-api:chime
+    container_name: sth-rest-api-as1_as2-4
+    ports:
+      - "8008:8008"
+    command: |
+      bash -c "
+        sawtooth-rest-api \
+          --connect tcp://validator-as1_as2-4:4004 \
+          --bind 0.0.0.0:8008
+      "
+    stop_signal: SIGKILL
+
+# -------------=== settings tp ===-------------
+
+  settings-tp-as1_as2-4:
+    image: hyperledger/sawtooth-settings-tp:chime
+    container_name: sth-settings-tp-as1_as2-4
+    expose:
+      - 4004
+    command: settings-tp -C tcp://validator-as1_as2-4:4004
+    stop_signal: SIGKILL
+
+# -------------=== validators ===-------------
+
+  validator-as1_as2-4:
+    image: hyperledger/sawtooth-validator:chime
+    container_name: sth-validator-as1_as2-4
+    ports:
+      - "4004:4004"
+      - "5050:5050"
+      - "8800:8800"
+    command: |
+      bash -c "
+        if [ ! -e /etc/sawtooth/keys/validator.priv ]; then
+          echo 02c124be841cab0fd457eff0830437f856f40eb630c8500b7e472364e39f0972d0 > /etc/sawtooth/keys/validator.pub
+          echo 9a81675356e3be316640aea2f52324a681ddd85b7d0bacdaf52fb82b7205e2fe > /etc/sawtooth/keys/validator.priv
+        fi &&
+        if [ ! -e /etc/sawtooth/keys/validator-1.pub ]; then
+          echo 026eeb0eb509a27403bd40325536ccee85f40593f15989d7fc2d6e394fbdeb3e0e > /etc/sawtooth/keys/validator-1.pub
+          echo 0322744aef612da0ac30c0c30b51d2ab029ce6ea5a46c47ba204aa472f2885c9f1 > /etc/sawtooth/keys/validator-2.pub
+          echo 03e43ab5f5a8b6c86a629915901f51e82211928f01d852d8d145d9b7348b0355d4 > /etc/sawtooth/keys/validator-3.pub
+        fi &&
+        if [ ! -e config-genesis.batch ]; then
+          sawset genesis -k /etc/sawtooth/keys/validator.priv -o config-genesis.batch
+        fi &&
+        if [ ! -e config.batch ]; then
+          sawset proposal create \
+              -k /etc/sawtooth/keys/validator.priv \
+              sawtooth.consensus.algorithm.name=pbft \
+              sawtooth.consensus.algorithm.version=1.0 \
+              sawtooth.consensus.pbft.members=\\['\"'$$(cat /etc/sawtooth/keys/validator.pub)'\"','\"'$$(cat /etc/sawtooth/keys/validator-1.pub)'\"','\"'$$(cat /etc/sawtooth/keys/validator-2.pub)'\"','\"'$$(cat /etc/sawtooth/keys/validator-3.pub)'\"'\\] \
+              sawtooth.publisher.max_batches_per_block=1200 \
+              -o config.batch
+        fi &&
+        if [ ! -e /var/lib/sawtooth/genesis.batch ]; then
+          sawadm genesis config-genesis.batch config.batch
+        fi &&
+        if [ ! -e /root/.sawtooth/keys/my_key.priv ]; then
+          sawtooth keygen my_key
+        fi &&
+        sawtooth-validator -vv \
+          --endpoint tcp://0.0.0.0:8800 \
+          --bind component:tcp://eth0:4004 \
+          --bind consensus:tcp://eth0:5050 \
+          --bind network:tcp://0.0.0.0:8800 \
+          --scheduler parallel \
+          --peering static \
+          --maximum-peer-connectivity 10000       
+      "
+
+# -------------=== pbft engines ===-------------
+
+  pbft-as1_as2-4:
+    image: hyperledger/sawtooth-pbft-engine:chime
+    container_name: sth-pbft-as1_as2-4
+    command: pbft-engine -vv --connect tcp://validator-as1_as2-4:5050
+    stop_signal: SIGKILL

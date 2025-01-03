@@ -14,6 +14,12 @@
 
 * yaml
 
+* pip install sawtooth-signing
+
+* pip install psutil
+
+* copiar https://github.com/hyperledger-archives/sawtooth-sdk-python/blob/main/sawtooth_signing/secp256k1.py para o local onde o pacote sawtooth-signing foi instalado. Se estiver utilizando conda, provavelmente esteja em $HOME/miniconda/envs/!!NOME_AMBIENTE_VIRTUAL_PYTHON!!/lib/python3.8/site-packages/sawtooth_signing/secp256k1.py  --> A versão recuperada pelo pip pode levar a erros !!
+
 * Criar diretorio: sudo mkdir /var/log/sawtooth
 
 * Chaves publica e privada em cada host
@@ -27,6 +33,8 @@
 * Necessário utilizar essas chaves para enviar transações (em redes permissionadas)
 
 <h2> Como interagir (versão atual 1-validador) </h2>
+
+* Criar imagem a partir do on_container/Dockerfile: $ sudo docker build --debug --tag 'qosblockchainv1' .
 
 * Versão atual (folders): one-container e client
 
