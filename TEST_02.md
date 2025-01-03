@@ -2,11 +2,11 @@
 
 - Arquitetura básica da rede QoSBlockchain
 
-<img src="../imgs/qosblockchain_arquitetura.png"/>
+<img src="imgs/qosblockchain_arquitetura.png"/>
 
 - Arquitetura da troca de mensagens:
 
-<img src="../imgs/qosblockchain_arquitetura2.png"/>
+<img src="imgs/qosblockchain_arquitetura2.png"/>
 
 * Na pasta one_container, existe um arquivo chamado docker-compose-modelo.yaml
 

@@ -2,15 +2,28 @@
 
 * Algumas explicações de design estão em notebook.ipynb
 
+- Arquitetura básica da rede QoSBlockchain
+
+<img src="imgs/qosblockchain_arquitetura.png"/>
+
+- Arquitetura da troca de mensagens:
+
+<img src="imgs/qosblockchain_arquitetura2.png"/>
+
+
 <h3>Dependências:</h3>
 
 * Se faltar alguma, provavelmente python vai avisar (olhar as importações do client e do one-container/processor)
 
 * sawtooth-sdk (pip install sawtooth-sdk) (necessário para o client)
 
+* docker
+
+* docker-compose
+
 * toml
 
-* colo
+* color
 
 * yaml
 
